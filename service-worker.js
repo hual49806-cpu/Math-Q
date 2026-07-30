@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pet-math-v11';
+const CACHE_NAME = 'pet-math-v12';
 const ASSETS = [
   './',
   './index.html',

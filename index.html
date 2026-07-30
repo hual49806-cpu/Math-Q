@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>萌寵數學餵養樂園 V11</title>
+  <title>萌寵數學餵養樂園 V12</title>
 <meta name="theme-color" content="#8fc74f">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -27,7 +27,7 @@
     <header class="topbar">
       <div>
         <h1>🐾 萌寵數學餵養樂園</h1>
-        <p>V11｜永久存檔模組正式版</p>
+        <p>V12｜每日登入・神秘寶箱・萌寵動畫版</p>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button id="installApp" class="secondary" hidden>📲 安裝到手機</button>
@@ -139,6 +139,30 @@
     <section class="panel">
       <h2>🎒 飼料背包</h2>
       <div id="bagList" class="bag-grid"></div>
+    </section>
+
+    <section class="content-grid">
+      <section class="panel">
+        <h2>📅 每日登入獎勵</h2>
+        <div id="loginRewards" class="login-rewards"></div>
+        <div class="login-actions">
+          <p id="loginStatus" class="callout">每日第一次登入可以領取獎勵。</p>
+          <button id="claimLogin" class="primary">領取今日獎勵</button>
+        </div>
+      </section>
+
+      <section class="panel treasure-panel">
+        <h2>🎁 神秘寶箱</h2>
+        <div class="treasure-wrap">
+          <div id="treasureChest" class="treasure-chest" aria-label="神秘寶箱">🧰</div>
+          <div>
+            <p>每答對20題獲得1把鑰匙，3把鑰匙可開箱。</p>
+            <p><b>🔑 鑰匙：</b><span id="chestKeys">0</span>　<b>答題進度：</b><span id="chestProgress">0 / 20</span></p>
+            <p id="chestResult" class="callout">寶箱正在等待你！</p>
+            <button id="openChest" class="primary">使用3把鑰匙開箱</button>
+          </div>
+        </div>
+      </section>
     </section>
 
     <section class="panel">

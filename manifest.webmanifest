@@ -1,7 +1,7 @@
 {
-  "name": "萌寵數學餵養樂園 V11",
-  "short_name": "萌寵數學V11",
-  "description": "永久存檔、匯出匯入、1至8年級AI分級與萌寵養成。",
+  "name": "萌寵數學餵養樂園 V12",
+  "short_name": "萌寵數學V12",
+  "description": "每日登入、神秘寶箱、萌寵動畫與永久存檔。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
