@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>萌寵數學餵養樂園 V11</title>
+<meta name="theme-color" content="#8fc74f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="萌寵數學">
+<link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="notice" class="notice" aria-live="polite"></div>
+
+  <div id="levelModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-emoji">🎉</div>
+      <h2 id="levelModalTitle">恭喜升級！</h2>
+      <p id="levelModalText"></p>
+      <button id="closeModal" class="primary">繼續遊戲</button>
+    </div>
+  </div>
+
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <h1>🐾 萌寵數學餵養樂園</h1>
+        <p>V11｜永久存檔模組正式版</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="installApp" class="secondary" hidden>📲 安裝到手機</button>
+        <button id="exportSave" class="secondary">📤 匯出存檔</button>
+        <button id="importSave" class="secondary">📥 匯入存檔</button>
+        <input id="importSaveFile" type="file" accept="application/json,.json" hidden>
+        <button id="soundToggle" class="secondary">🔊 音效開啟</button>
+      </div>
+    </header>
+
+    <section class="stats">
+      <div class="stat"><span>🪙 金幣</span><b id="coins">50</b></div>
+      <div class="stat"><span>⭐ 等級</span><b id="level">1</b></div>
+      <div class="stat"><span>✅ 答對</span><b id="correct">0</b></div>
+      <div class="stat"><span>🔥 連擊</span><b id="combo">0</b></div>
+      <div class="stat"><span>🤖 能力值</span><b id="ability">100</b></div>
+    </section>
+
+    <section class="game-grid">
+      <aside class="panel">
+        <h2>選擇萌寵</h2>
+        <div id="petList" class="pet-list"></div>
+      </aside>
+
+      <section class="panel pet-panel">
+        <div class="name-row">
+          <input id="petNameInput" aria-label="寵物名稱">
+          <button id="saveName" class="secondary">儲存名字</button>
+          <span id="stageBadge" class="badge">幼年期</span>
+        </div>
+
+        <div id="petStage" class="pet-stage stage-1" title="點擊萌寵可以互動">
+          <img id="petImage" alt="目前萌寵">
+          <div id="stageDeco" class="stage-deco"></div>
+          <div id="expression" class="expression happy">
+            <span id="expressionFace">😊</span>
+            <b id="expressionText">開心</b>
+          </div>
+        </div>
+        <div class="interaction-row">
+          <button class="secondary pet-interact" data-action="pet">🤍 摸摸</button>
+          <button class="secondary pet-interact" data-action="play">🎾 玩耍</button>
+          <button class="secondary pet-interact" data-action="hug">🫂 抱抱</button>
+        </div>
+        <div id="interactionMessage" class="callout interaction-message">點擊萌寵或按互動按鈕陪陪牠吧！</div>
+
+        <div class="meter">
+          <div><span>❤️ 飽食度</span><span id="hungerText">50 / 100</span></div>
+          <div class="track"><div id="hungerFill" class="fill"></div></div>
+        </div>
+
+        <div class="meter">
+          <div><span>⭐ 升級進度</span><span id="progressText">0 / 5</span></div>
+          <div class="track"><div id="progressFill" class="fill gold"></div></div>
+        </div>
+
+        <h3>進化路線</h3>
+        <div id="evolutionGrid" class="evolution-grid"></div>
+      </section>
+
+      <section class="panel">
+        <h2>🤖 AI 學習狀態</h2>
+        <div class="ai-box">
+          <p><b>目前難度：</b><span id="difficultyLabel"></span></p>
+          <p><b>目前題型：</b><span id="questionType"></span></p>
+          <p><b>最近正確率：</b><span id="recentAccuracy"></span></p>
+          <p><b>平均答題時間：</b><span id="avgTime"></span></p>
+          <p><b>最強題型：</b><span id="strongestType"></span></p>
+          <p><b>需要加強：</b><span id="weakestType"></span></p>
+        </div>
+        <div id="aiSuggestion" class="callout">完成幾題後，AI會開始調整難度。</div>
+      </section>
+    </section>
+
+    <section class="content-grid">
+      <section class="panel quiz-panel">
+        <div class="quiz-head">
+          <h2>📘 數學挑戰</h2>
+          <span id="rewardPreview" class="badge"></span>
+        </div>
+        <div class="grade-controls">
+          <label for="gradeSelect"><b>選擇年級</b></label>
+          <select id="gradeSelect">
+            <option value="1">一年級</option>
+            <option value="2">二年級</option>
+            <option value="3">三年級</option>
+            <option value="4">四年級</option>
+            <option value="5">五年級</option>
+            <option value="6">六年級</option>
+            <option value="7">七年級</option>
+            <option value="8">八年級</option>
+          </select>
+        </div>
+        <div id="gradeScope" class="callout"></div>
+        <div id="question" class="question">24 + 18 = ?</div>
+        <div class="answer-row">
+          <input id="answer" type="number" inputmode="numeric" placeholder="請輸入答案">
+          <button id="submitAnswer" class="primary">送出答案</button>
+        </div>
+        <div id="feedback" class="feedback" aria-live="polite"></div>
+      </section>
+
+      <section class="panel">
+        <h2>🏪 萌寵商店</h2>
+        <div id="shopList" class="item-list"></div>
+      </section>
+    </section>
+
+    <section class="panel">
+      <h2>🎒 飼料背包</h2>
+      <div id="bagList" class="bag-grid"></div>
+    </section>
+
+    <section class="panel">
+      <h2>🎯 每日任務</h2>
+      <div id="dailyTasks" class="task-grid"></div>
+    </section>
+
+    <section class="content-grid">
+      <section class="panel">
+        <h2>🎁 每日扭蛋</h2>
+        <div class="gacha-box">
+          <div>
+            <p>每天可免費抽一次，可能獲得金幣或飼料。</p>
+            <p id="gachaStatus" class="callout">今天尚未抽取。</p>
+          </div>
+          <div>
+            <div class="gacha-machine">🎰</div>
+            <button id="gachaButton" class="primary">免費抽一次</button>
+          </div>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>👩‍🏫 老師模式摘要</h2>
+        <div id="teacherSummary" class="teacher-grid"></div>
+        <button id="resetToday" class="secondary" style="margin-top:12px">重設今日紀錄</button>
+      </section>
+    </section>
+
+    <section class="panel">
+      <h2>📊 題型表現</h2>
+      <div id="typeStats" class="type-stats"></div>
+    </section>
+  </main>
+
+  <script src="js/save.js"></script>
+  <script src="js/app.js"></script>
+
+<script src="js/pwa.js"></script>
+
+</body>
+</html>
