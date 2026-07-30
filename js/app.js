@@ -52,6 +52,7 @@
   };
 
   const defaultState={
+    player:{name:'',createdAt:'',updatedAt:''},
     pet:'rabbit',grade:1,coins:50,correct:0,combo:0,ability:100,soundOn:true,
     lastHungerUpdate:Date.now(),
     answer:0,currentType:'g1_add20',questionStartedAt:Date.now(),
@@ -81,6 +82,24 @@
   }
   function saveState(){
     window.SaveSystem.save(state)
+  }
+  function openPlayerModal(isEdit=false){
+    $('playerModalTitle').textContent=isEdit?'修改玩家名稱':'歡迎來到萌寵數學樂園！';
+    $('savePlayerName').textContent=isEdit?'儲存名稱':'開始遊戲';
+    $('playerNameInput').value=state.player.name||'';
+    $('playerModal').classList.remove('hidden');
+    setTimeout(()=>$('playerNameInput').focus(),50)
+  }
+  function savePlayerName(){
+    const name=$('playerNameInput').value.trim();
+    if(!name){alert('請輸入玩家名稱。');return}
+    state.player.name=name.slice(0,16);
+    if(!state.player.createdAt)state.player.createdAt=new Date().toISOString();
+    state.player.updatedAt=new Date().toISOString();
+    saveState();
+    $('playerModal').classList.add('hidden');
+    render();
+    showNotice(`歡迎，${state.player.name}！`)
   }
   function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min}
   function getLevel(petKey=state.pet){
@@ -605,6 +624,7 @@
   function render(){
     applyHungerDecay();
     const level=getLevel(),p=PETS[state.pet],ps=state.pets[state.pet],stageIndex=getEffectiveStageIndex(state.pet),stage=p.stages[stageIndex];
+    $('playerNameDisplay').textContent=state.player.name||'尚未設定';
     $('coins').textContent=state.coins;$('level').textContent=level;$('correct').textContent=ps.correct;
     $('combo').textContent=state.combo;$('ability').textContent=state.ability;
     $('petImage').src=p.image;$('petNameInput').value=ps.name;$('stageBadge').textContent=stage.title;
@@ -628,6 +648,9 @@
     renderPets();renderEvolution();renderShop();renderBag();renderTypeStats();renderAI();renderDailyTasks();renderTeacherSummary();renderGacha();renderLogin();renderChest()
   }
 
+  $('savePlayerName').addEventListener('click',savePlayerName);
+  $('playerNameInput').addEventListener('keydown',event=>{if(event.key==='Enter')savePlayerName()});
+  $('editPlayerName').addEventListener('click',()=>openPlayerModal(true));
   $('submitAnswer').addEventListener('click',submitAnswer);
   $('answer').addEventListener('keydown',e=>{if(e.key==='Enter')submitAnswer()});
   $('petImage').addEventListener('click',()=>interactPet('pet'));
@@ -681,5 +704,6 @@
 
   applyHungerDecay();
   render();generateQuestion();
+  if(!state.player.name)openPlayerModal(false);
   setInterval(()=>{if(applyHungerDecay())render()},60000)
 })();

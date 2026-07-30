@@ -2,7 +2,7 @@
   const PRIMARY_KEY = 'petMathPermanent';
   const BACKUP_KEY = 'petMathPermanentBackup';
   const DAILY_BACKUP_KEY = 'petMathDailyBackup';
-  const CURRENT_VERSION = 12;
+  const CURRENT_VERSION = 13;
   const LEGACY_KEYS = ['petMathV10', 'petMathV8', 'petMathV5'];
 
   function clone(value) {
@@ -35,6 +35,7 @@
 
   function migrate(saved, defaults, todayKey) {
     const merged = Object.assign(clone(defaults), saved || {});
+    merged.player = Object.assign(clone(defaults.player), (saved && saved.player) || {});
     merged.inventory = Object.assign(clone(defaults.inventory), (saved && saved.inventory) || {});
     merged.pets = Object.assign(clone(defaults.pets), (saved && saved.pets) || {});
     merged.daily = Object.assign(clone(defaults.daily), (saved && saved.daily) || {});
