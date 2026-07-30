@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#fff9ef"/>
-  <circle cx="256" cy="220" r="138" fill="#8fc74f"/>
-  <circle cx="205" cy="205" r="22" fill="#5b4634"/>
-  <circle cx="307" cy="205" r="22" fill="#5b4634"/>
-  <path d="M205 274 Q256 322 307 274" fill="none" stroke="#5b4634" stroke-width="18" stroke-linecap="round"/>
-  <text x="256" y="430" text-anchor="middle" font-family="sans-serif" font-size="72">🐾</text>
-</svg>
