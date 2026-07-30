@@ -1,7 +1,7 @@
 {
-  "name": "萌寵數學餵養樂園",
+  "name": "萌寵數學餵養樂園 V8",
   "short_name": "萌寵數學",
-  "description": "答數學題、賺金幣、餵養萌寵並升級進化。",
+  "description": "AI自適應數學、萌寵養成、每日任務與扭蛋。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

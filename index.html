@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>萌寵數學餵養樂園 V7 PWA</title>
+  <title>萌寵數學餵養樂園 V8 正式版</title>
 <meta name="theme-color" content="#8fc74f">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -107,10 +107,24 @@ button{cursor:pointer}
 }
 @media(max-width:650px){
   .stats{grid-template-columns:repeat(2,1fr)}
-  .bag-grid,.type-stats{grid-template-columns:repeat(2,1fr)}
+  .bag-grid,.type-stats,.task-grid{grid-template-columns:repeat(2,1fr)}
   .answer-row{grid-template-columns:1fr}
   .evolution-grid{grid-template-columns:repeat(2,1fr)}
 }
+.task-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.task-card{border:1px solid var(--line);border-radius:16px;padding:12px;background:#fffdf9}
+.task-card.done{background:var(--green-soft);border-color:var(--green)}
+.task-card h3{margin:0 0 6px}
+.task-progress{height:10px;background:#eee5d8;border-radius:999px;overflow:hidden;margin:8px 0}
+.task-progress>div{height:100%;background:var(--green)}
+.gacha-box{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+.gacha-machine{font-size:76px;text-align:center}
+.teacher-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.teacher-card{border:1px solid var(--line);border-radius:16px;padding:12px;background:#f8fbff}
+.teacher-card b{display:block;font-size:24px;margin-top:4px}
+.coin-fly{position:fixed;z-index:60;font-size:28px;pointer-events:none;animation:coinFly .9s ease forwards}
+@keyframes coinFly{0%{transform:translate(0,0) scale(.8);opacity:1}100%{transform:translate(180px,-220px) scale(1.3);opacity:0}}
+@media(max-width:650px){.teacher-grid{grid-template-columns:repeat(2,1fr)}.gacha-box{grid-template-columns:1fr}}
 
 </style>
 </head>
@@ -130,7 +144,7 @@ button{cursor:pointer}
     <header class="topbar">
       <div>
         <h1>🐾 萌寵數學餵養樂園</h1>
-        <p>V7 AI 智慧 PWA 版</p>
+        <p>V8 GitHub Pages 正式版</p>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button id="installApp" class="secondary" hidden>📲 安裝到手機</button><button id="soundToggle" class="secondary">🔊 音效開啟</button></div>
     </header>
@@ -219,6 +233,32 @@ button{cursor:pointer}
     </section>
 
     <section class="panel">
+      <h2>🎯 每日任務</h2>
+      <div id="dailyTasks" class="task-grid"></div>
+    </section>
+
+    <section class="content-grid">
+      <section class="panel">
+        <h2>🎁 每日扭蛋</h2>
+        <div class="gacha-box">
+          <div>
+            <p>每天可免費抽一次，可能獲得金幣或飼料。</p>
+            <p id="gachaStatus" class="callout">今天尚未抽取。</p>
+          </div>
+          <div>
+            <div class="gacha-machine">🎰</div>
+            <button id="gachaButton" class="primary">免費抽一次</button>
+          </div>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>👩‍🏫 老師模式摘要</h2>
+        <div id="teacherSummary" class="teacher-grid"></div>
+        <button id="resetToday" class="secondary" style="margin-top:12px">重設今日紀錄</button>
+      </section>
+    </section>
+
+    <section class="panel">
       <h2>📊 題型表現</h2>
       <div id="typeStats" class="type-stats"></div>
     </section>
@@ -275,6 +315,7 @@ button{cursor:pointer}
     answer:0,currentType:'add2',questionStartedAt:Date.now(),
     recent:[],inventory:{carrot:0,bone:0,fish:0,egg:0,leaf:0},
     typeStats:{},
+    daily:{date:'',answered:0,correct:0,feeds:0,maxCombo:0,gachaUsed:false},
     pets:{
       rabbit:{name:'雪球',hunger:50},dog:{name:'奶油',hunger:50},
       cat:{name:'奶茶',hunger:50},snake:{name:'心心',hunger:50},
@@ -287,13 +328,22 @@ button{cursor:pointer}
   const $=id=>document.getElementById(id);
 
   function clone(obj){return JSON.parse(JSON.stringify(obj))}
+  function todayKey(){return new Date().toISOString().slice(0,10)}
   function loadState(){
     try{
-      const saved=JSON.parse(localStorage.getItem('petMathV5'));
-      return Object.assign(clone(defaultState),saved||{});
-    }catch{return clone(defaultState)}
+      const saved=JSON.parse(localStorage.getItem('petMathV8'))||JSON.parse(localStorage.getItem('petMathV5'));
+      const merged=Object.assign(clone(defaultState),saved||{});
+      merged.inventory=Object.assign(clone(defaultState.inventory),(saved&&saved.inventory)||{});
+      merged.pets=Object.assign(clone(defaultState.pets),(saved&&saved.pets)||{});
+      merged.daily=Object.assign(clone(defaultState.daily),(saved&&saved.daily)||{});
+      Object.keys(defaultState.pets).forEach(k=>merged.pets[k]=Object.assign(clone(defaultState.pets[k]),merged.pets[k]||{}));
+      if(merged.daily.date!==todayKey())merged.daily={date:todayKey(),answered:0,correct:0,feeds:0,maxCombo:0,gachaUsed:false};
+      return merged
+    }catch{
+      const fresh=clone(defaultState);fresh.daily.date=todayKey();return fresh
+    }
   }
-  function saveState(){localStorage.setItem('petMathV5',JSON.stringify(state))}
+  function saveState(){localStorage.setItem('petMathV8',JSON.stringify(state))}
   function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min}
   function getLevel(){
     let level=1;
@@ -358,6 +408,53 @@ button{cursor:pointer}
   }
   function reactPet(){
     const img=$('petImage');img.classList.remove('react');void img.offsetWidth;img.classList.add('react')
+  }
+  function flyCoins(amount){
+    const el=document.createElement('div');el.className='coin-fly';el.textContent=`🪙 +${amount}`;
+    el.style.left='45%';el.style.top='55%';document.body.appendChild(el);setTimeout(()=>el.remove(),950)
+  }
+  function taskDefinitions(){return[
+    {key:'answered',label:'完成 15 題',target:15,reward:30},
+    {key:'correct',label:'答對 10 題',target:10,reward:40},
+    {key:'feeds',label:'餵食 3 次',target:3,reward:25}
+  ]}
+  function claimedKey(key){return `claimed_${key}`}
+  function claimTask(task){
+    if(state.daily[claimedKey(task.key)]||state.daily[task.key]<task.target)return;
+    state.daily[claimedKey(task.key)]=true;state.coins+=task.reward;flyCoins(task.reward);sound('correct');
+    showNotice(`任務完成，獲得 ${task.reward} 金幣`);saveState();render()
+  }
+  function renderDailyTasks(){
+    const wrap=$('dailyTasks');wrap.innerHTML='';
+    taskDefinitions().forEach(task=>{
+      const value=Math.min(state.daily[task.key],task.target),done=value>=task.target,claimed=!!state.daily[claimedKey(task.key)];
+      const card=document.createElement('div');card.className='task-card'+(done?' done':'');
+      card.innerHTML=`<h3>${done?'✅':'🎯'} ${task.label}</h3><div>${value} / ${task.target}</div><div class="task-progress"><div style="width:${value/task.target*100}%"></div></div><p>獎勵：${task.reward} 金幣</p>`;
+      const b=document.createElement('button');b.className=done&&!claimed?'primary':'secondary';b.textContent=claimed?'已領取':done?'領取獎勵':'進行中';b.disabled=!done||claimed;
+      b.addEventListener('click',()=>claimTask(task));card.appendChild(b);wrap.appendChild(card)
+    })
+  }
+  function renderTeacherSummary(){
+    const accuracy=state.daily.answered?Math.round(state.daily.correct/state.daily.answered*100):0;
+    const avg=averageTime();
+    const data=[['今日答題',state.daily.answered+' 題'],['今日正確率',accuracy+'%'],['最高連擊',state.daily.maxCombo+' 題'],['平均速度',state.recent.length?avg.toFixed(1)+' 秒':'尚無資料']];
+    $('teacherSummary').innerHTML=data.map(([a,b])=>`<div class="teacher-card"><span>${a}</span><b>${b}</b></div>`).join('')
+  }
+  function useGacha(){
+    if(state.daily.gachaUsed)return;
+    const prizes=[
+      {text:'獲得 50 金幣',coins:50},{text:'獲得 30 金幣',coins:30},
+      {text:'獲得胡蘿蔔 ×2',food:'carrot',count:2},{text:'獲得小魚乾 ×2',food:'fish',count:2},
+      {text:'獲得營養蛋 ×1',food:'egg',count:1},{text:'獲得嫩葉套餐 ×2',food:'leaf',count:2}
+    ];
+    const prize=prizes[rand(0,prizes.length-1)];
+    if(prize.coins){state.coins+=prize.coins;flyCoins(prize.coins)}
+    if(prize.food)state.inventory[prize.food]+=prize.count;
+    state.daily.gachaUsed=true;sound('level');showNotice(prize.text);saveState();render()
+  }
+  function renderGacha(){
+    $('gachaStatus').textContent=state.daily.gachaUsed?'今天已抽過，明天再來！':'今天尚未抽取，可免費抽一次。';
+    $('gachaButton').disabled=state.daily.gachaUsed;$('gachaButton').textContent=state.daily.gachaUsed?'今日已抽取':'免費抽一次'
   }
 
   function availableTypes(){
@@ -449,9 +546,10 @@ button{cursor:pointer}
     if(state.recent.length>20)state.recent.shift();
 
     const oldLevel=getLevel();
+    state.daily.answered++;
     if(isCorrect){
-      state.combo++;state.correct++;
-      const reward=rewardForAnswer();state.coins+=reward;
+      state.combo++;state.correct++;state.daily.correct++;state.daily.maxCombo=Math.max(state.daily.maxCombo,state.combo);
+      const reward=rewardForAnswer();state.coins+=reward;flyCoins(reward);
       updateAbility(true,time);
       $('feedback').textContent=`答對了！連擊 ${state.combo}，獲得 ${reward} 金幣。`;
       sound('correct');reactPet()
@@ -513,7 +611,7 @@ button{cursor:pointer}
       b.disabled=state.inventory[key]<=0||state.pets[state.pet].hunger>=100;
       b.addEventListener('click',()=>{
         if(state.inventory[key]<=0)return;
-        state.inventory[key]--;state.pets[state.pet].hunger=Math.min(100,state.pets[state.pet].hunger+(fav?25:10));
+        state.inventory[key]--;state.pets[state.pet].hunger=Math.min(100,state.pets[state.pet].hunger+(fav?25:10));state.daily.feeds++;
         sound('feed');reactPet();saveState();render()
       });
       div.appendChild(b);$('bagList').appendChild(div)
@@ -563,7 +661,7 @@ button{cursor:pointer}
     $('progressFill').style.width=level>=8?'100%':`${Math.max(0,Math.min(100,(state.correct-prev)/(next-prev)*100))}%`;
     $('soundToggle').textContent=state.soundOn?'🔊 音效開啟':'🔇 音效關閉';
     $('rewardPreview').textContent=`目前基礎獎勵：${getLevel()<=2?10:getLevel()<=4?15:getLevel()<=6?20:30} 金幣`;
-    renderPets();renderEvolution();renderShop();renderBag();renderTypeStats();renderAI()
+    renderPets();renderEvolution();renderShop();renderBag();renderTypeStats();renderAI();renderDailyTasks();renderTeacherSummary();renderGacha()
   }
 
   $('submitAnswer').addEventListener('click',submitAnswer);
@@ -574,6 +672,12 @@ button{cursor:pointer}
     saveState();render();showNotice('名字已儲存')
   });
   $('soundToggle').addEventListener('click',()=>{state.soundOn=!state.soundOn;saveState();render()});
+  $('gachaButton').addEventListener('click',useGacha);
+  $('resetToday').addEventListener('click',()=>{
+    if(confirm('確定要重設今天的紀錄嗎？')){
+      state.daily={date:todayKey(),answered:0,correct:0,feeds:0,maxCombo:0,gachaUsed:false};saveState();render();showNotice('今日紀錄已重設')
+    }
+  });
   $('closeModal').addEventListener('click',()=>$('levelModal').classList.add('hidden'));
 
   render();generateQuestion()
