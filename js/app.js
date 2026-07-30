@@ -28,12 +28,13 @@
   };
 
   const FOODS = {
-    carrot:{name:'胡蘿蔔',emoji:'🥕',price:20},
-    bone:{name:'骨頭餅乾',emoji:'🦴',price:25},
-    fish:{name:'小魚乾',emoji:'🐟',price:25},
-    egg:{name:'營養蛋',emoji:'🥚',price:30},
-    leaf:{name:'嫩葉套餐',emoji:'🌿',price:20}
+    carrot:{name:'胡蘿蔔',emoji:'🥕',price:20,hunger:20},
+    bone:{name:'骨頭餅乾',emoji:'🦴',price:25,hunger:25},
+    fish:{name:'小魚乾',emoji:'🐟',price:25,hunger:25},
+    egg:{name:'營養蛋',emoji:'🥚',price:30,hunger:35},
+    leaf:{name:'嫩葉套餐',emoji:'🌿',price:20,hunger:20}
   };
+  const REFUSED_FOODS={dog:'leaf',cat:'egg',rabbit:'fish',snake:'bone',dino:'carrot'};
 
   const LEVEL_THRESHOLDS=[0,5,12,20,30,42,56,72];
   const TYPE_LABELS={
@@ -56,13 +57,16 @@
     answer:0,currentType:'g1_add20',questionStartedAt:Date.now(),
     recent:[],inventory:{carrot:0,bone:0,fish:0,egg:0,leaf:0},
     typeStats:{},
+    hearts:0,rareEggs:0,legendaryEggs:0,
+    login:{lastClaimDate:'',streak:0},
+    chest:{keys:0,progress:0,totalOpened:0},
     daily:{date:'',answered:0,correct:0,feeds:0,maxCombo:0,gachaUsed:false},
     pets:{
-      rabbit:{name:'雪球',hunger:50,correct:0,stagePenalty:0,starved:false},
-      dog:{name:'奶油',hunger:50,correct:0,stagePenalty:0,starved:false},
-      cat:{name:'奶茶',hunger:50,correct:0,stagePenalty:0,starved:false},
-      snake:{name:'心心',hunger:50,correct:0,stagePenalty:0,starved:false},
-      dino:{name:'芽芽',hunger:50,correct:0,stagePenalty:0,starved:false}
+      rabbit:{name:'雪球',hunger:50,correct:0,stagePenalty:0,starved:false,feedCount:0,favoriteFeedCount:0,interactions:0},
+      dog:{name:'奶油',hunger:50,correct:0,stagePenalty:0,starved:false,feedCount:0,favoriteFeedCount:0,interactions:0},
+      cat:{name:'奶茶',hunger:50,correct:0,stagePenalty:0,starved:false,feedCount:0,favoriteFeedCount:0,interactions:0},
+      snake:{name:'心心',hunger:50,correct:0,stagePenalty:0,starved:false,feedCount:0,favoriteFeedCount:0,interactions:0},
+      dino:{name:'芽芽',hunger:50,correct:0,stagePenalty:0,starved:false,feedCount:0,favoriteFeedCount:0,interactions:0}
     }
   };
 
@@ -174,7 +178,8 @@
     };
     const list=messages[action]||messages.pet;
     $('interactionMessage').textContent=list[rand(0,list.length-1)];
-    reactPet();sound('feed')
+    ps.interactions=(ps.interactions||0)+1;
+    petVisualEffect(action);reactPet();sound('feed');saveState()
   }
   function flyCoins(amount){
     const el=document.createElement('div');el.className='coin-fly';el.textContent=`🪙 +${amount}`;
@@ -222,6 +227,113 @@
   function renderGacha(){
     $('gachaStatus').textContent=state.daily.gachaUsed?'今天已抽過，明天再來！':'今天尚未抽取，可免費抽一次。';
     $('gachaButton').disabled=state.daily.gachaUsed;$('gachaButton').textContent=state.daily.gachaUsed?'今日已抽取':'免費抽一次'
+  }
+
+  const LOGIN_REWARDS=[
+    {label:'50金幣',emoji:'🪙',coins:50},
+    {label:'80金幣',emoji:'🪙',coins:80},
+    {label:'隨機飼料',emoji:'🍖',randomFood:1},
+    {label:'150金幣',emoji:'🪙',coins:150},
+    {label:'愛心×3',emoji:'❤️',hearts:3},
+    {label:'高級飼料',emoji:'🥚',food:'egg',count:1},
+    {label:'稀有蛋×1',emoji:'🥚',rareEggs:1}
+  ];
+
+  function dateKey(date=new Date()){return date.toISOString().slice(0,10)}
+  function dayDiff(a,b){
+    if(!a||!b)return 999;
+    return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/86400000)
+  }
+  function addRandomFood(count=1){
+    const keys=Object.keys(FOODS),key=keys[rand(0,keys.length-1)];
+    state.inventory[key]=(state.inventory[key]||0)+count;
+    return `${FOODS[key].emoji} ${FOODS[key].name} ×${count}`
+  }
+  function grantReward(reward){
+    const texts=[];
+    if(reward.coins){state.coins+=reward.coins;flyCoins(reward.coins);texts.push(`${reward.coins}金幣`)}
+    if(reward.hearts){state.hearts+=reward.hearts;texts.push(`愛心×${reward.hearts}`)}
+    if(reward.rareEggs){state.rareEggs+=reward.rareEggs;texts.push(`稀有蛋×${reward.rareEggs}`)}
+    if(reward.legendaryEggs){state.legendaryEggs+=reward.legendaryEggs;texts.push(`傳說蛋×${reward.legendaryEggs}`)}
+    if(reward.food){state.inventory[reward.food]=(state.inventory[reward.food]||0)+(reward.count||1);texts.push(`${FOODS[reward.food].emoji}${FOODS[reward.food].name}×${reward.count||1}`)}
+    if(reward.randomFood)texts.push(addRandomFood(reward.randomFood));
+    if(reward.allFoods){Object.keys(FOODS).forEach(k=>state.inventory[k]++);texts.push('全套飼料各1份')}
+    return texts.join('、')
+  }
+  function claimDailyLogin(){
+    const today=dateKey(),last=state.login.lastClaimDate;
+    if(last===today)return;
+    const diff=dayDiff(last,today);
+    state.login.streak=diff===1?Math.min(7,(state.login.streak||0)+1):1;
+    state.login.lastClaimDate=today;
+    const reward=LOGIN_REWARDS[state.login.streak-1];
+    const text=grantReward(reward);
+    sound('level');rewardBurst(['🎉','✨',reward.emoji,'💖']);
+    showNotice(`第${state.login.streak}天登入：${text}`);
+    saveState();render()
+  }
+  function renderLogin(){
+    const today=dateKey(),claimed=state.login.lastClaimDate===today;
+    const nextStreak=claimed?state.login.streak:(dayDiff(state.login.lastClaimDate,today)===1?Math.min(7,(state.login.streak||0)+1):1);
+    $('loginRewards').innerHTML=LOGIN_REWARDS.map((r,i)=>{
+      const day=i+1,current=day===nextStreak,done=claimed&&day<=state.login.streak;
+      return `<div class="login-day ${current?'current':''} ${done?'claimed':''}"><b>第${day}天</b><div>${r.emoji}</div><small>${r.label}</small></div>`
+    }).join('');
+    $('claimLogin').disabled=claimed;
+    $('claimLogin').textContent=claimed?'今日已領取':'領取今日獎勵';
+    $('loginStatus').textContent=claimed?`今日已領取，連續登入第${state.login.streak}天。`:`今天可領取第${nextStreak}天獎勵。`
+  }
+  function rewardBurst(items=['✨','🎉','⭐']){
+    const wrap=document.createElement('div');wrap.className='reward-burst';
+    for(let i=0;i<18;i++){
+      const s=document.createElement('span');s.className='reward-particle';s.textContent=items[rand(0,items.length-1)];
+      s.style.setProperty('--x',`${rand(-260,260)}px`);s.style.setProperty('--y',`${rand(-330,-100)}px`);s.style.setProperty('--r',`${rand(-220,220)}deg`);
+      s.style.animationDelay=`${i*.025}s`;wrap.appendChild(s)
+    }
+    document.body.appendChild(wrap);setTimeout(()=>wrap.remove(),1600)
+  }
+  function addChestProgress(){
+    state.chest.progress++;
+    if(state.chest.progress>=20){
+      state.chest.progress-=20;state.chest.keys++;
+      showNotice('答對20題，獲得🔑1把寶箱鑰匙！');sound('level')
+    }
+  }
+  function openTreasureChest(){
+    if(state.chest.keys<3)return;
+    state.chest.keys-=3;state.chest.totalOpened++;
+    const roll=Math.random();
+    let reward,text;
+    if(roll<.65){
+      const r=Math.random();
+      reward=r<.5385?{coins:100}:r<.8462?{coins:200}:{coins:500};
+      text=grantReward(reward)
+    }else if(roll<.95){
+      text=addRandomFood(1)
+    }else{
+      const superRewards=[{coins:1000},{legendaryEggs:1},{hearts:5},{allFoods:true}];
+      reward=superRewards[rand(0,superRewards.length-1)];text=grantReward(reward)
+    }
+    const chest=$('treasureChest');chest.classList.remove('opening');void chest.offsetWidth;chest.classList.add('opening');
+    $('chestResult').textContent=`🎊 恭喜獲得：${text}`;
+    sound('level');rewardBurst(['✨','🎉','🪙','🍖','⭐']);
+    saveState();render()
+  }
+  function renderChest(){
+    $('chestKeys').textContent=state.chest.keys;
+    $('chestProgress').textContent=`${state.chest.progress} / 20`;
+    $('openChest').disabled=state.chest.keys<3;
+    $('treasureChest').classList.toggle('ready',state.chest.keys>=3)
+  }
+  function petVisualEffect(kind){
+    const stage=$('petStage');
+    ['pet-happy','pet-play','pet-hug','pet-refuse'].forEach(c=>stage.classList.remove(c));
+    const cls=kind==='play'?'pet-play':kind==='hug'?'pet-hug':kind==='refuse'?'pet-refuse':'pet-happy';
+    void stage.offsetWidth;stage.classList.add(cls);
+    const effect=document.createElement('div');effect.className='pet-effect';
+    const symbols=kind==='refuse'?['❌','💢']:kind==='play'?['⭐','✨','🎾']:['❤️','💖','✨'];
+    for(let i=0;i<7;i++){const s=document.createElement('span');s.textContent=symbols[rand(0,symbols.length-1)];s.style.setProperty('--x',`${rand(-100,100)}px`);s.style.animationDelay=`${i*.06}s`;effect.appendChild(s)}
+    stage.appendChild(effect);setTimeout(()=>{effect.remove();stage.classList.remove(cls)},1300)
   }
 
   const GRADE_SCOPES={
@@ -377,6 +489,7 @@
       state.combo++;state.correct++;state.pets[state.pet].correct++;
       state.daily.correct++;state.daily.maxCombo=Math.max(state.daily.maxCombo,state.combo);
       const reward=rewardForAnswer();state.coins+=reward;flyCoins(reward);
+      addChestProgress();
       updateAbility(true,time);
       $('feedback').textContent=`答對了！連擊 ${state.combo}，獲得 ${reward} 金幣。`;
       sound('correct');reactPet()
@@ -434,18 +547,27 @@
     $('bagList').innerHTML='';
     Object.entries(FOODS).forEach(([key,f])=>{
       const fav=PETS[state.pet].favorite===key;
+      const refused=REFUSED_FOODS[state.pet]===key;
       const div=document.createElement('div');div.className='bag-item';
-      div.innerHTML=`<div class="food-icon">${f.emoji}</div><b>${f.name}</b><p>庫存：${state.inventory[key]}</p>${fav?'<p>⭐ 最愛</p>':''}`;
+      div.innerHTML=`<div class="food-icon">${f.emoji}</div><b>${f.name}</b><p>庫存：${state.inventory[key]}</p>${fav?'<p>⭐ 最愛</p>':refused?'<p>❌ 不喜歡</p>':''}`;
       const b=document.createElement('button');b.className='primary';b.textContent='餵食';
       b.disabled=state.inventory[key]<=0||state.pets[state.pet].hunger>=100;
       b.addEventListener('click',()=>{
         if(state.inventory[key]<=0)return;
+        const ps=state.pets[state.pet],name=ps.name;
         state.inventory[key]--;
-        const ps=state.pets[state.pet];
-        ps.hunger=Math.min(100,ps.hunger+(fav?25:10));
+        if(refused){
+          $('interactionMessage').textContent=`${name}拒絕吃${f.name}！已消耗1份飼料，飽食度沒有增加。`;
+          petVisualEffect('refuse');sound('wrong');saveState();render();return
+        }
+        const gain=f.hunger+(fav?10:0);
+        ps.hunger=Math.min(100,ps.hunger+gain);
+        ps.feedCount=(ps.feedCount||0)+1;
+        if(fav)ps.favoriteFeedCount=(ps.favoriteFeedCount||0)+1;
         if(ps.hunger>0){ps.starved=false;ps.stagePenalty=0}
         state.daily.feeds++;
-        sound('feed');reactPet();saveState();render()
+        $('interactionMessage').textContent=fav?`${name}超喜歡${f.name}！飽食度增加${gain}點。`:`${name}吃下${f.name}，飽食度增加${gain}點。`;
+        petVisualEffect(fav?'hug':'pet');sound('feed');reactPet();saveState();render()
       });
       div.appendChild(b);$('bagList').appendChild(div)
     })
@@ -497,7 +619,13 @@
     $('rewardPreview').textContent=`目前基礎獎勵：${getLevel()<=2?10:getLevel()<=4?15:getLevel()<=6?20:30} 金幣`;
     $('gradeSelect').value=String(state.grade);
     $('gradeScope').textContent=`${state.grade}年級範圍：${GRADE_SCOPES[state.grade]}`;
-    renderPets();renderEvolution();renderShop();renderBag();renderTypeStats();renderAI();renderDailyTasks();renderTeacherSummary();renderGacha()
+    $('petStage').classList.toggle('pet-full',ps.hunger>=90);
+    $('petStage').classList.toggle('pet-hungry',ps.hunger<50&&ps.hunger>0);
+    $('petStage').classList.toggle('pet-starved',ps.hunger===0);
+    if(!$('petStage').querySelector('.blink-overlay')){
+      const blink=document.createElement('div');blink.className='blink-overlay';$('petStage').appendChild(blink)
+    }
+    renderPets();renderEvolution();renderShop();renderBag();renderTypeStats();renderAI();renderDailyTasks();renderTeacherSummary();renderGacha();renderLogin();renderChest()
   }
 
   $('submitAnswer').addEventListener('click',submitAnswer);
@@ -541,6 +669,8 @@
       event.target.value=''
     }
   });
+  $('claimLogin').addEventListener('click',claimDailyLogin);
+  $('openChest').addEventListener('click',openTreasureChest);
   $('gachaButton').addEventListener('click',useGacha);
   $('resetToday').addEventListener('click',()=>{
     if(confirm('確定要重設今天的紀錄嗎？')){
