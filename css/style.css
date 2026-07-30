@@ -161,3 +161,14 @@ button{cursor:pointer}
   .treasure-wrap{grid-template-columns:1fr}
   .treasure-chest{font-size:76px}
 }
+
+
+/* V13 玩家名稱 */
+.player-chip{display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:#fffdf9}
+.tiny-button{border:0;background:transparent;text-decoration:underline;cursor:pointer;padding:2px 4px}
+.player-modal-card{max-width:420px;text-align:center}
+.player-modal-card label{display:block;text-align:left;margin:12px 0 5px}
+.player-modal-card input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:14px;padding:12px;font-size:18px}
+.player-modal-card .primary{width:100%;margin-top:12px}
+.player-avatar{font-size:58px}
+.small-note{font-size:14px;opacity:.75}
