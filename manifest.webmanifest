@@ -1,7 +1,7 @@
 {
-  "name": "萌寵數學餵養樂園 V12",
-  "short_name": "萌寵數學V12",
-  "description": "每日登入、神秘寶箱、萌寵動畫與永久存檔。",
+  "name": "萌寵數學餵養樂園 V13",
+  "short_name": "萌寵數學V13",
+  "description": "加入玩家名稱，保留永久存檔、每日登入、神秘寶箱與萌寵養成。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

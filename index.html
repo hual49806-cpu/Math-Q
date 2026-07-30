@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>萌寵數學餵養樂園 V12</title>
+  <title>萌寵數學餵養樂園 V13</title>
 <meta name="theme-color" content="#8fc74f">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -27,7 +27,10 @@
     <header class="topbar">
       <div>
         <h1>🐾 萌寵數學餵養樂園</h1>
-        <p>V12｜每日登入・神秘寶箱・萌寵動畫版</p>
+        <p>V13｜玩家名稱版</p>
+        <div class="player-chip">👤 玩家：<b id="playerNameDisplay">尚未設定</b>
+          <button id="editPlayerName" class="tiny-button" type="button">修改</button>
+        </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button id="installApp" class="secondary" hidden>📲 安裝到手機</button>
@@ -196,6 +199,20 @@
       <div id="typeStats" class="type-stats"></div>
     </section>
   </main>
+
+  <div id="playerModal" class="modal hidden">
+    <div class="modal-card player-modal-card">
+      <div class="player-avatar">🐾</div>
+      <h2 id="playerModalTitle">歡迎來到萌寵數學樂園！</h2>
+      <p>請先輸入玩家名稱，之後答題與萌寵紀錄會以這個名稱顯示。</p>
+      <label for="playerNameInput"><b>玩家名稱</b></label>
+      <input id="playerNameInput" maxlength="16" placeholder="例如：小明">
+      <p class="small-note">名稱會儲存在目前裝置，也會包含在匯出的存檔中。</p>
+      <button id="savePlayerName" class="primary" type="button">開始遊戲</button>
+    </div>
+  </div>
+
+  <div id="notice" class="notice"></div>
 
   <script src="js/save.js"></script>
   <script src="js/app.js"></script>
